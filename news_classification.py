@@ -54,15 +54,21 @@ import nltk
 import re
 import numpy as np
 
+nltk.download('wordnet')
 nltk.download('stopwords')
+
 from nltk.corpus import stopwords
+from nltk.stem.wordnet import WordNetLemmatizer
+
+lem = WordNetLemmatizer()
 
 def preprocess(text):
     text = re.sub("U.S.", "USA", text)
     text = re.sub("[^a-z ]", " ", text.lower())
     text = re.sub("photos?|videos?", "", text)
     words = text.split()
-    words = [w for w in words if w not in stopwords.words("english")]
+    words = [lem.lemmatize(w) for w in words]
+    words = [w for w in words if len(w) > 2 and w not in stopwords.words("english")]
     return words
 
 data['headline'] = data['headline'].apply(preprocess)
@@ -94,28 +100,33 @@ for key in sorted_keys[1:]:
 
 data = data_upsampled
 
-# Bag of words - take n most common words from each category
+# Bag of words
 from sklearn.feature_extraction.text import CountVectorizer, HashingVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfTransformer
 
-def dummy(vec):
-    return vec
-
 # TODO what about HashingVectorizer
 # TODO add tokenizer and preprocessor here
-vectorizer = CountVectorizer(tokenizer=dummy, preprocessor=dummy)
+vectorizer = CountVectorizer(
+    tokenizer=lambda vec: vec,
+    preprocessor=lambda vec: vec,
+    ngram_range=(1, 2),
+    max_df=8940, # decided after analyzing the overall frequency of tokens
+    max_features=50000)
 X = vectorizer.fit_transform(data['headline'])
 print("Number of tokens:", len(vectorizer.get_feature_names()))
 
-transformer = TfidfTransformer(smooth_idf=False)
-X = transformer.fit_transform(X)
+# transformer = TfidfTransformer(smooth_idf=False)
+# X = transformer.fit_transform(X)
 y = data['category'].cat.codes
 cat_dict = dict(enumerate(data['category'].cat.categories)) # dict { code: label }
 
 print("Shape of X:", X.shape)
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.7)
+
+d = dict(zip(vectorizer.get_feature_names(), np.array(X.sum(axis=0)).flatten()))
+sorted(d.items(), key=lambda kv: kv[1], reverse=False)
 
 from sklearn import metrics
 from time import time
@@ -161,14 +172,6 @@ from sklearn.linear_model import SGDClassifier
 clf = LinearSVC()
 pred = test_classifier(clf)
 
-clf = SGDClassifier(alpha=.0001, max_iter=50, penalty="elasticnet")
-test_classifier(clf)
-
-clf = BernoulliNB()
-test_classifier(clf)
-clf = RandomForestClassifier()
-test_classifier(clf)
-
 codes_dict = dict(enumerate(data['category'].cat.categories))
 binary_class_precision(y_test, pred, codes_dict, print_scores=True)
 print("-------------------------------")
@@ -182,7 +185,6 @@ X_pca = pca.fit(X)
 X_pca_scores = X_pca.transform(X)
 
 plt.figure(figsize=(10, 10))
-# sns.scatterplot(x=X_pca_scores[:, 0], y=X_pca_scores[:, 1], hue=data['category'].cat.codes)
 sns.scatterplot(x=X_pca_scores[:, 0], y=X_pca_scores[:, 1], hue=data['category'])
 
 # TODO Only important tokens:
