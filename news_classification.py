@@ -2,13 +2,12 @@ import json
 import pandas as pd
 
 import nltk
-from nlp_utils import preprocess
+from nlp_utils import HeadlinesVectorizer
 
 from collections import Counter
 from pandas.core.common import flatten
 from sklearn.utils import resample
 
-from sklearn.feature_extraction.text import HashingVectorizer
 from sklearn.model_selection import train_test_split
 
 from sklearn.svm import LinearSVC
@@ -81,6 +80,7 @@ data['category'].value_counts().plot.barh(figsize=(10, 10))
 plt.title("Categories in the dataset")
 plt.tight_layout()
 plt.draw()
+
 print(data.info())
 
 # ----------------------------------------
@@ -115,13 +115,16 @@ data['category'].value_counts().plot.barh(figsize=(10, 10))
 plt.title("Categories after merging")
 plt.tight_layout()
 plt.draw()
+
 print("NUmber of categories %d." % len(data['category'].unique()))
 print("Number of all headlines %d." % len(data))
 
 # ----------------------------------------
 print("\n>>> Preprocessing and tokenizing")
 
-data['headline'] = data['headline'].apply(preprocess)
+vectorizer = HeadlinesVectorizer()
+
+data['headline'] = vectorizer.preprocess_tokenize(data['headline'])
 
 grouped = data.groupby(by='category', as_index=False).agg(
     lambda a: list(flatten(a)))
@@ -154,19 +157,6 @@ data = data_upsampled
 # ----------------------------------------
 print("\n>>> Vectorizing the corpus")
 
-
-def identity(v):
-    return v
-
-
-vectorizer = HashingVectorizer(
-    preprocessor=identity,
-    tokenizer=identity,
-    lowercase=False,
-    stop_words='english',
-    token_pattern=None,
-    ngram_range=(1, 2))
-
 X = vectorizer.fit_transform(data['headline'])
 y = data['category'].cat.codes
 
@@ -188,6 +178,7 @@ print("Shape of X:", X.shape)
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.7)
 
+# how to print the vocabulary if the vectorizer doesn't hash
 # d = dict(zip(vectorizer.get_feature_names(),
 #              np.array(X.sum(axis=0)).flatten()))
 # sorted_d = sorted(d.items(), key=lambda kv: kv[1], reverse=False)
