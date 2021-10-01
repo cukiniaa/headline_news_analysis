@@ -18,17 +18,17 @@ print(df.head())
 print("Tokenizing headlines", end=" ")
 t0 = time()
 tokens = vectorizer.preprocess_tokenize(df['headline_text'])
-print("%.3f (s)" % time()-t0)
+print("%.3f (s)" % (time()-t0))
 
 print("Vectorizing tokens", end=" ")
 t0 = time()
 X = vectorizer.transform(tokens)
-print("%.3f (s)" % time()-t0)
+print("%.3f (s)" % (time()-t0))
 
 print("Predicting categories", end=" ")
 t0 = time()
 my_pred = clf.predict(X)
-print("%.3f (s)" % time()-t0)
+print("%.3f (s)" % (time()-t0))
 
 # change codes to labels and plot
 df['category'] = [cat_dict[p] for p in my_pred]

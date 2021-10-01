@@ -1,3 +1,5 @@
+My attempt to learn something about NLP + classification and investigate news coverage over the last eighteen years.
+
 ## Data
 
 The dataset used to train the classfier was taken from https://www.kaggle.com/rmisra/news-category-dataset.
