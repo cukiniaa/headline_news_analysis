@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 
 import _pickle as cPickle
 
+nltk.download('stopwords')
 nltk.download('punkt')
 
 
@@ -132,6 +133,7 @@ grouped['headline'] = [Counter(h_a) for h_a in grouped['headline']]
 grouped['common_words'] = [sorted(group.items(), key=lambda x: x[1],
                                   reverse=True)[:10]
                            for group in grouped['headline']]
+
 
 print("Most common words per category:")
 for _, row in grouped.iterrows():
